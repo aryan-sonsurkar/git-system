@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import hashlib
+import zlib
 
 def gitinit():
     Path(".mygit").mkdir(exist_ok=True)
@@ -19,8 +20,16 @@ def gitadd(filename):
     object_id = hashlib.sha1(blob_data).hexdigest()
     print(object_id)
     object_path = ".mygit/objects/" + object_id
-    Path(object_path).write_bytes(blob_data)
-    
+    compressed = zlib.compress(blob_data)
+    Path(object_path).write_bytes(compressed)
+
+def gitcat(hash):
+    data = Path(".mygit/objects/" + hash).read_bytes()
+    data = zlib.decompress(data)
+    parts = data.split(b"\0")
+    content = parts[1].decode()
+    print(content)
+
 cmd = input("$")
 parts=cmd.split()
 
@@ -33,3 +42,6 @@ if len(parts) > 1 and parts[1]=="init" and parts[0]=="mygit":
 
 if len(parts) > 2 and parts[0]=="mygit" and parts[1]=="add":
     gitadd(parts[2])
+
+if len(parts) > 2 and parts[0]=="mygit" and parts[1]=="cat-file":
+    gitcat(parts[2])
